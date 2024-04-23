@@ -9,6 +9,10 @@ let interactiveElement;
 // const displayElement = document.getElementById('output');
 // const interactiveElement = document.getElementById('input');
 
+function onInput(event){
+  console.log(event);
+}
+
 function initialize(initial, options){
   // Error handling
   if(typeof template !== "string"){
@@ -27,9 +31,10 @@ function initialize(initial, options){
   interactiveElement.id = 'interactive';
   
   // Values
+  const inputAttributes = ["value", "step", "min", "max"];
+
   const values = {};
   const keys = Object.keys(initial);
-  const attributes = ["value", "step", "min", "max"];
   const references = keys.reduce((acc, key) => {
     acc[key] = {};
     return acc;
@@ -39,7 +44,7 @@ function initialize(initial, options){
     values[key] = {};
     
     // Default values
-    attributes.forEach(attribute => {
+    inputAttributes.forEach(attribute => {
       if(typeof config[attribute] !== "undefined"){
         values[key][attribute] = config[attribute];
       }
@@ -49,19 +54,18 @@ function initialize(initial, options){
     Object.entries(config).forEach(([attribute, value]) => {
       if(typeof value === "string"){
         // Check if key exists
-        if(!keys.includes(value)){
-          throw new Error(`Invalid reference '${value}'`);
+        if(keys.includes(value)){
+          // Add reference to referenced node
+          if(Array.isArray(references[value][key])){
+            references[value][key].push(attribute);
+          } else {
+            references[value][key] = [attribute];
+          }
+  
+          // Set value
+          // values[key][attribute] = initial[value]?.[attribute];
+          values[key][attribute] = initial[value].value;
         }
-
-        // Add reference to referenced node
-        if(Array.isArray(references[value][key])){
-          references[value][key].push(attribute);
-        } else {
-          references[value][key] = [attribute];
-        }
-
-        // Set value
-        values[key][attribute] = initial[value]?.[attribute];
       }
     });
   });
@@ -94,9 +98,22 @@ function initialize(initial, options){
   _values = values;
   _options = options;
 
+  // console.log("Values:", _values);
+  console.log("References:", _values["a"]);
+
   document.body.appendChild(displayElement);
   document.body.appendChild(interactiveElement);
-  
-  console.log("References:", _references);
-  console.log("Values:", _values);
+
+  // Register event listeners
+  Object.keys(_values).forEach(key => {
+    const inputElement = document.getElementById(key);
+    inputElement.addEventListener('input', onInput);
+  });
+}
+
+function onUnload(){
+  Object.keys(_values).forEach(key => {
+    const inputElement = document.getElementById(key);
+    inputElement.removeEventListener('input', onInput);
+  });
 }
