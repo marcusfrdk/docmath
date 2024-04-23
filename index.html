@@ -15,7 +15,7 @@
     equations = [
       "{{a}} + {{b}} = {{c}}",
       "{{c}} + {{a}} = {{d}}",
-      "{{d}} + 1",
+      "{{d}} + 1 = {{e}}",
     ];
 
     // equations = "{{a}} + {{b}} = {{output}}";
@@ -31,12 +31,14 @@
     // function compute({a, b, c, d}){
     //   return [a + b];
     // }
-    function compute({a, b, c, d}){
-      return [
-        a + b,
-        a - b,
-        c - d,
-      ];
+    function compute({a, b}){
+      const c = a + b;
+      const d = a + b;
+      return {
+        c, 
+        d: d, 
+        e: d + 1
+      };
     }
 
     
@@ -58,14 +60,8 @@
 
     init({
       a: {
-        step: 0.5,
-        // max: "b",
-        min: "b",
-        // default: 0
       },
       b: {
-        max: 10,
-        default: 0
       }
     })
   </script>

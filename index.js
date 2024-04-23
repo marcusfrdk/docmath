@@ -3,12 +3,64 @@ let equations;
 
 let _config; // Record<string, Record<string, number>>;
 let _values; // Record<string, number>
-let _references; // Record<string, Record<string, string>>;
+let _references; // Record<string, {i: Record<string, string>, o: Record<string, string>}>;
+
+let _variables;
+let _answers;
 
 // --- COMPUTE ---
 function recompute(){
   console.log("Recomputing...");
+
+  const args =  Object.keys(_values)
+  .filter(key => _variables.includes(key))
+  .reduce((obj, key) => {
+    obj[key] = _values[key];
+    return obj;
+  }, {});
+
+  const results = compute(args);
+  console.log(results);
+
 }
+
+function onUpdate(event){
+  const id = event.srcElement.id;
+  const node = document.getElementById(id);
+  const config = _config[id];
+
+  let value = parseFloat(node.value) ?? undefined;
+
+  // Validate
+  if(typeof config.min !== "undefined" && value < config.min){
+    value = config.min;
+    node.value = value;
+  }
+  
+  if(typeof config.max !== "undefined" && value > config.max){
+    value = config.max;
+    node.value = value;
+  }
+
+  // Update incoming references
+  if(_references[id]){
+    Object.entries(_references[id]["i"]).forEach(([key, attributes]) => {
+      attributes.forEach(attribute => {
+        _config[key][attribute] = value;
+        document.getElementById(key)[attribute] = value;
+      });
+    });
+  }
+
+  _values[id] = Number(value);
+
+  // console.log("Config:", _config);
+  console.log("Values:", _values);
+  // console.log("References:", _references);
+  // console.log()
+
+  recompute();
+};
 
 // --- INITIALIZATION ---
 function parseEquations(){
@@ -44,36 +96,6 @@ function init(config){
   
   const [variableDefinitions, answerDefinitions] = parseEquations(equations);
 
-  // Validate compute function
-  if(typeof compute === "undefined"){
-    throw new Error("No compute function is defined.")
-  }
-
-  const computeString = compute.toString();
-  const returnRegex = /return\s+((?:[^;\n]*\[[^\]]*\])|(?:[^;\n]*))(?=(;|\/\/|\/\*|$))/gm;
-  const returnMatch = returnRegex.exec(computeString);
-  
-  if(!returnMatch){
-    throw new Error("No return statement found in compute function.");
-  }
-  
-  let returnStatement = (returnMatch.length < 1 ? returnMatch.join("") : returnMatch[1]).replace(/\s/g, "");
-  
-  const arrayRegex = /\[([^\]]*)\]/g;
-
-  if(!arrayRegex.test(returnStatement)){
-    throw new Error("The return statement of compute must be an array.");
-  }
-
-  const objectRegex = /(\[([^\]]*)\])|(\{([^\}]*)\})/g;
-  returnStatement = returnStatement.slice(1, -1).replace(objectRegex, "object");
-
-  const equationCount = returnStatement.split(",").filter(f => f).length;
-
-  if(equationCount !== equations.length){
-    throw new Error(`The number of equations must match the number of return values in the compute function, expected ${equations.length} but got ${equationCount}.`);
-  }
-  
   // Check if any values are both defined and computed
   const common = variableDefinitions.filter(value => answerDefinitions.includes(value));
   if(common.length > 0){
@@ -94,6 +116,38 @@ function init(config){
     }
   });
 
+  _variables = variableDefinitions;
+  _answers = answerDefinitions;
+
+  // Validate compute function
+  if(typeof compute === "undefined"){
+    throw new Error("No compute function is defined.")
+  }
+
+  const computeString = compute.toString();
+  const returnRegex = /return\s+((?:[^;\n]*\{[^\}]*\})|(?:[^;\n]*))(?=(;|\/\/|\/\*|$))/gm;
+  const returnMatch = returnRegex.exec(computeString);
+  
+  if(!returnMatch){
+    throw new Error("No return statement found in compute function.");
+  }
+  
+  const returnStatement = (returnMatch.length < 1 ? returnMatch.join("") : returnMatch[1]).replace(/\s|\/\//g, "");
+
+  const returnVariables = [...new Set(returnStatement.match(/(?:\b([a-zA-Z_$][a-zA-Z0-9_$]*)\b(?=\s*(?::|\,|\})))+/g))];
+
+  
+  const missingVariables = answerDefinitions.filter(variable => !returnVariables.includes(variable));
+  const redundantVariables = returnVariables.filter(variable => !answerDefinitions.includes(variable));
+
+  if(missingVariables.length > 0){
+    throw new Error(`Missing variable${missingVariables.length === 1 ? "" : "s"} ${missingVariables.join(", ")} in the compute function's return value.`);
+  }
+
+  if(redundantVariables.length > 0){
+    throw new Error(`Redundant variable${redundantVariables.length === 1 ? "" : "s"} ${redundantVariables.join(", ")} in the compute function's return value.`);
+  }
+
   // Fractions
   if(typeof fractions !== "undefined"){
     if(typeof fractions !== "number"){
@@ -109,7 +163,7 @@ function init(config){
   const validTypes = {
     "min": ["number", "string", "undefined"],
     "max": ["number", "string", "undefined"],
-    "default": ["number", "undefined"],
+    "value": ["number", "undefined"],
     "step": ["number", "undefined"],
   };
 
@@ -134,7 +188,7 @@ function init(config){
   const configKeys = Object.keys(config);
   const referenceAttributes = ["min", "max"];
   const references = configKeys.reduce((acc, key) => {
-    acc[key] = {};
+    acc[key] = {i: {}, o: {}};
     return acc;
   }, {});
 
@@ -157,21 +211,30 @@ function init(config){
 
         // Add reference
         if(Array.isArray(references[key][value[attribute]])){
-          references[key][value[attribute]].push(attribute);
+          references[key]["o"][value[attribute]].push(attribute);
+          references[value[attribute]]["i"][key].push(attribute);
         } else {
-          references[key][value[attribute]] = [attribute];
+          references[key]["o"][value[attribute]] = [attribute];
+          references[value[attribute]]["i"][key] = [attribute];
         }
       }
     });
   });
 
   // Circular references
+  Object.entries(references).forEach(([key, value]) => {
+    Object.entries(value["o"]).forEach(([ref, attributes]) => {
+      if(value["i"].hasOwnProperty(ref)){
+        throw new Error(`Circular reference between '${key}' and '${ref}'.`);
+      }
+    });
+  });
+
+  // Update config
   Object.entries(config).forEach(([key, value]) => {
-    Object.entries(value).forEach(([_, val]) => {
-      if(typeof val === "string"){
-        if(references[val] && references[val].hasOwnProperty(key)){
-          throw new Error(`Circular reference between '${key}' and '${val}'.`);
-        }
+    referenceAttributes.forEach(attribute => {
+      if(typeof value[attribute] === "string"){
+        config[key][attribute] = config[value[attribute]][attribute];
       }
     });
   });
@@ -180,12 +243,12 @@ function init(config){
   _config = config;
   _references = references;
   _values = Object.entries(config).reduce((acc, [key, value]) => {
-    acc[key] = typeof value.default === "number" ? value.default : NaN;
+    acc[key] = typeof value.value === "number" ? value.value : NaN;
     return acc;
   }, {});
 
   // DOM
-  const inputAttributes = ["step", "min", "max"];
+  const inputAttributes = ["step", "min", "max", "value"];
 
   const equationsElement = document.createElement("div");
   equationsElement.id = "equations";
@@ -212,6 +275,7 @@ function init(config){
     inputElement.name = variable;
     inputElement.type = "number";
 
+    // Set attributes
     inputAttributes.forEach((attribute) => {
       let value;
 
@@ -234,4 +298,17 @@ function init(config){
 
   document.body.appendChild(equationsElement);
   document.body.appendChild(variablesElement);
+
+  // Add event listeners
+  Object.keys(_config).forEach(key => {
+    const inputElement = document.getElementById(key);
+    inputElement.addEventListener("input", onUpdate);
+  });
+}
+
+function onUnload(){
+  Object.keys(_config).forEach(key => {
+    const inputElement = document.getElementById(key);
+    inputElement.removeEventListener("input", onUpdate);
+  });
 }
