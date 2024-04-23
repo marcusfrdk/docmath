@@ -1,6 +1,16 @@
 let fractions;
 let equations;
 
+let _config; // Record<string, Record<string, number>>;
+let _values; // Record<string, number>
+let _references; // Record<string, Record<string, string>>;
+
+// --- COMPUTE ---
+function recompute(){
+  console.log("Recomputing...");
+}
+
+// --- INITIALIZATION ---
 function parseEquations(){
   if(typeof equations === "string") equations = [equations];
 
@@ -139,5 +149,23 @@ function init(config){
     });
   });
 
-  console.log("References:", references);
+  // Set global variables
+  _config = config;
+  _references = references;
+  _values = Object.entries(config).reduce((acc, [key, value]) => {
+    acc[key] = typeof value.default === "number" ? value.default : NaN;
+    return acc;
+  }, {});
+
+  // TEMPORARY
+  const text = `
+  Config: ${JSON.stringify(_config)}
+  <br>Values: ${JSON.stringify(_values)}
+  <br>References: ${JSON.stringify(_references)}
+  `;
+
+  // create element to display text
+  const element = document.createElement("div");
+  element.innerHTML = text;
+  document.body.appendChild(element);
 }
