@@ -77,8 +77,6 @@ function init(config){
   };
 
   Object.entries(config).forEach(([key, value]) => {
-    console.log(value);
-
     if(typeof value !== "object"){
       throw new Error(`Invalid type for '${key}'.`);
     }
@@ -89,7 +87,8 @@ function init(config){
       }
 
       if(!validTypes[attribute].includes(typeof val)){
-        throw new Error(`Invalid type for '${key}.${attribute}'.`);
+        const expectedTypes = validTypes[attribute].join(", ");
+        throw new Error(`Invalid type for '${key}.${attribute}', got '${typeof val}', expected one of ${expectedTypes}.`);
       }
     });
   });
@@ -104,20 +103,19 @@ function init(config){
 
   Object.entries(config).forEach(([key, value]) => {
     attributes.forEach(attribute => {
-      if(typeof value[attribute] !== "undefined"){
+      if(typeof value[attribute] === "string"){
         // Undefined reference
         if(!configKeys.includes(value[attribute])){
-          throw new Error(`Undefined reference '${value[attribute]}' for '${key}.${attribute}'.`);
+          if(answerDefinitions.includes(value[attribute])){
+            throw new Error(`Only static values can be referenced at the moment, found computed value '${value[attribute]}' for '${key}.${attribute}'.`)
+          } else {
+            throw new Error(`Undefined reference '${value[attribute]}' for '${key}.${attribute}'.`);
+          }
         }
 
         // Self reference
         if(value[attribute] === key){
-          throw new Error(`Self reference found '${key}.${attribute}'.`);
-        }
-
-        // Circular reference
-        if(config[value[attribute]].hasOwnProperty(attribute)){
-          throw new Error(`Circular reference between '${key}' and '${value[attribute]}'.`);
+          throw new Error(`Self reference found for '${key}.${attribute}'.`);
         }
 
         // Add reference
@@ -130,5 +128,16 @@ function init(config){
     });
   });
 
-  // console.log("References:", references);
+  // Circular references
+  Object.entries(config).forEach(([key, value]) => {
+    Object.entries(value).forEach(([_, val]) => {
+      if(typeof val === "string"){
+        if(references[val] && references[val].hasOwnProperty(key)){
+          throw new Error(`Circular reference between '${key}' and '${val}'.`);
+        }
+      }
+    });
+  });
+
+  console.log("References:", references);
 }
