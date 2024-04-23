@@ -43,9 +43,6 @@ function init(config){
   }
   
   const [variableDefinitions, answerDefinitions] = parseEquations(equations);
-
-  // console.log("Variables:", variableDefinitions);
-  // console.log("Answers:", answerDefinitions);
   
   // Check if any values are both defined and computed
   const common = variableDefinitions.filter(value => answerDefinitions.includes(value));
@@ -105,14 +102,14 @@ function init(config){
 
   // References
   const configKeys = Object.keys(config);
-  const attributes = ["min", "max"];
+  const referenceAttributes = ["min", "max"];
   const references = configKeys.reduce((acc, key) => {
     acc[key] = {};
     return acc;
   }, {});
 
   Object.entries(config).forEach(([key, value]) => {
-    attributes.forEach(attribute => {
+    referenceAttributes.forEach(attribute => {
       if(typeof value[attribute] === "string"){
         // Undefined reference
         if(!configKeys.includes(value[attribute])){
@@ -157,15 +154,54 @@ function init(config){
     return acc;
   }, {});
 
-  // TEMPORARY
-  const text = `
-  Config: ${JSON.stringify(_config)}
-  <br>Values: ${JSON.stringify(_values)}
-  <br>References: ${JSON.stringify(_references)}
-  `;
+  // DOM
+  const inputAttributes = ["step", "min", "max"];
 
-  // create element to display text
-  const element = document.createElement("div");
-  element.innerHTML = text;
-  document.body.appendChild(element);
+  const equationsElement = document.createElement("div");
+  equationsElement.id = "equations";
+
+  const variablesElement = document.createElement("form");
+  variablesElement.id = "variables";
+
+  equations.forEach((_, index) => {
+    const equationElement = document.createElement("div");
+    equationElement.id = `equation-${index + 1}`;
+    equationElement.className = "equation";
+    equationsElement.appendChild(equationElement);
+  });
+
+  variableDefinitions.forEach((variable) => {
+    const containerElement = document.createElement("div");
+
+    const labelElement = document.createElement("label");
+    labelElement.for = variable;
+    labelElement.textContent = variable;
+
+    const inputElement = document.createElement("input");
+    inputElement.id = variable;
+    inputElement.name = variable;
+    inputElement.type = "number";
+
+    inputAttributes.forEach((attribute) => {
+      let value;
+
+      if(referenceAttributes.includes(attribute)){
+        const key = _config[variable][attribute];
+        value = typeof _values[key] === "number" ? _values[key] : _config[variable][attribute];
+      } else {
+        value = _config[variable][attribute];
+      }
+
+      if(typeof value !== "undefined"){
+        inputElement.setAttribute(attribute, value);
+      }
+    });
+
+    containerElement.appendChild(labelElement);
+    containerElement.appendChild(inputElement);
+    variablesElement.appendChild(containerElement);
+  });
+
+  document.body.appendChild(equationsElement);
+  document.body.appendChild(variablesElement);
 }
