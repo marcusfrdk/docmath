@@ -21,22 +21,40 @@
     // equations = "{{a}} + {{b}} = {{output}}";
 
     // -> number, number[], number[][] or Record<string, number>
-    function compute({a, b, ans, ans_2}){
+    // function compute({a, b, c, d}){
+    //   return [
+    //     a + b,
+    //     ans + a
+    //   ]
+    // }
+
+    // function compute({a, b, c, d}){
+    //   return [a + b];
+    // }
+    function compute({a, b, c, d}){
       return [
         a + b,
-        ans + a
+        a - b,
+        c - d,
       ];
-
-      // return 1 -> 1
-      // return [1, 2] -> 1, 2
-      // return [[1, 2], [3, 4]] -> Matrix
-      // return {x: 1, y: 2} -> x: 1, y: 2
-
-      // return {
-      //   x: a + b,
-      //   y: a - b
-      // };
     }
+
+    
+    
+    // return 1 -> 1
+    // return [1, 2] -> 1, 2
+    // return [[1, 2], [3, 4]] -> Matrix
+    // return {x: 1, y: 2} -> x: 1, y: 2
+    
+    // return 1
+    // return [1, 2]
+    // return [[1, 2], [3, 4]]
+    // return [{x: 1, y: 2}]
+
+    // return {
+    //   x: a + b,
+    //   y: a - b
+    // };
 
     init({
       a: {

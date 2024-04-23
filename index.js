@@ -43,6 +43,36 @@ function init(config){
   }
   
   const [variableDefinitions, answerDefinitions] = parseEquations(equations);
+
+  // Validate compute function
+  if(typeof compute === "undefined"){
+    throw new Error("No compute function is defined.")
+  }
+
+  const computeString = compute.toString();
+  const returnRegex = /return\s+((?:[^;\n]*\[[^\]]*\])|(?:[^;\n]*))(?=(;|\/\/|\/\*|$))/gm;
+  const returnMatch = returnRegex.exec(computeString);
+  
+  if(!returnMatch){
+    throw new Error("No return statement found in compute function.");
+  }
+  
+  let returnStatement = (returnMatch.length < 1 ? returnMatch.join("") : returnMatch[1]).replace(/\s/g, "");
+  
+  const arrayRegex = /\[([^\]]*)\]/g;
+
+  if(!arrayRegex.test(returnStatement)){
+    throw new Error("The return statement of compute must be an array.");
+  }
+
+  const objectRegex = /(\[([^\]]*)\])|(\{([^\}]*)\})/g;
+  returnStatement = returnStatement.slice(1, -1).replace(objectRegex, "object");
+
+  const equationCount = returnStatement.split(",").filter(f => f).length;
+
+  if(equationCount !== equations.length){
+    throw new Error(`The number of equations must match the number of return values in the compute function, expected ${equations.length} but got ${equationCount}.`);
+  }
   
   // Check if any values are both defined and computed
   const common = variableDefinitions.filter(value => answerDefinitions.includes(value));
