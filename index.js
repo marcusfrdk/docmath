@@ -154,7 +154,7 @@ function init(config){
       throw new Error("No compute function is defined.")
     }
 
-    const computeString = compute.toString();
+    const computeString = compute.toString().replace(/'[^']*'|"[^"]*"|`[^`]*`/g, "");
     const returnRegex = /return\s+((?:[^;\n]*\{[^\}]*\})|(?:[^;\n]*))(?=(;|\/\/|\/\*|$))/gm;
     const returnMatch = returnRegex.exec(computeString);
     
@@ -163,10 +163,6 @@ function init(config){
     }
     
     const returnStatement = (returnMatch.length < 1 ? returnMatch.join("") : returnMatch[1]).replace(/\s|\/\//g, "");
-
-    // const lhsVariables = returnStatement.match(/[{(,]\s*[A-Za-z0-9_]+/g);
-    // const shorthandVariables = returnStatement.match(/({,)?\s*[A-Za-z0-9_]\s*,/g);
-
     const keyRegex = /[{(,]\s*[A-Za-z0-9_]+:?/g;
     const keyMatches = (returnStatement.match(keyRegex) || []).map(match => match.replace(/[^A-Za-z0-9_]/g, ""));
     const returnVariables = [...new Set(keyMatches.map((match) => match.replace(/\s/g, "").replace(/:|,/g, "")))];
