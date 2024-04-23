@@ -105,7 +105,7 @@ function parseEquations(){
     
     if(ans_match) _answers.add(ans_match[1]);
 
-    const var_matches = equation.match(/{{(.*?)}}/g).map((match) => match.replace(/{{|}}/g, ""));
+    const var_matches = equation.match(/{{(.*?)}}/g).map((match) => match.replace(/{{|}}/g, "").replace(/[^A-Za-z0-9_]/g, ""));
     
     var_matches.forEach((var_match) => {
       if(!_answers.has(var_match)) {
@@ -293,12 +293,12 @@ function init(config){
       equationsElement.appendChild(equationElement);
     });
 
-    variableDefinitions.forEach((variable) => {
+    variableDefinitions.sort().forEach((variable) => {
       const containerElement = document.createElement("div");
 
       const labelElement = document.createElement("label");
       labelElement.for = variable;
-      labelElement.textContent = variable;
+      labelElement.textContent = `${variable} =`;
 
       const inputElement = document.createElement("input");
       inputElement.id = variable;

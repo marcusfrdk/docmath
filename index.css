@@ -1,0 +1,79 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+:root {
+  --strong: #1c1c1c;
+  --weak: #5c5c5c;
+  --muted: #aeaeae;
+
+  --background: #fafafa;
+  --bottom: #eaeaea;
+  --middle: #dfdfdf;
+  --top: #bfbfbf;
+
+  background-color: var(--background);
+  padding: 1rem;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+body {
+  width: 64rem;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 1rem;
+}
+
+#equations {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1.25em;
+}
+
+#variables {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#variables > div {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#variables > div > label {
+  /* font-weight: bold; */
+  font-size: 1.25rem;
+}
+
+#variables > div > input {
+  background: none;
+  border: 0.125rem solid var(--bottom);
+  height: 2.5rem;
+  font-size: 1rem;
+  padding: 0 0.5rem;
+  border-radius: 0.25rem;
+}
+
+#variables > div > input:focus-visible {
+  outline: 0.125rem solid var(--strong);
+}
