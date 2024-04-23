@@ -21,17 +21,14 @@ Include the following code in the head of your document:
 ### `<body>`
 
 ```html
-<div id="output"></div>
-<div id="input"></div>
-
 <script>
   // KaTeX
   // - {{output}} is the output of the compute() function.
   // - {{...key}} is each key in the initialize() object, such as {{a}} and {{b}} in this example.
-  const template = "{{output}} = {{a}} + {{b}}";
+  template = "{{output}} = {{a}} + {{b}}";
   
   // The function to compute {{output}}.
-  // ({a, b, ...}: Record<string, string>) => number
+  // ({a, b, ...}: Record<string, number>) => number
   function compute({a, b, ...}){
     return a + b;
   }
@@ -55,22 +52,23 @@ Include the following code in the head of your document:
   //
   initialize({
     a: {
-      value: number,
-      step: number,
-      min: number,
-      max: "b", // the value of b will be used (updates when "b" changes)
+      value: 1,
+      step: 0.1,
+      min: 0,
+      max: "b", // The value of "b" (synced with the value of "b)
     },
     b: {
-      value: 1
+      value: 10
     }, 
     ...
   });
 </script>
 ```
 
-## KaTeX
+## Template
 
+The template used to render the interactive math is a string that containes the KaTeX math and the variables to be replaced.
 
-<!-- The rendering of the math is done by [KaTeX](https://katex.org/), a fast LaTeX math renderer for the web.
+KaTeX is a faster version of LaTeX that is used to render the math. You can find a list of supported functions [here](https://katex.org/docs/supported.html).
 
-Since it is a minimal version of LaTeX, it does not support everything that LaTeX does. You can find a list of supported functions [here](https://katex.org/docs/supported.html). -->
+You can use any variable names in the template that are defined in the `initialize()` function. The `{{output}}` variable is the result of the `compute()` function.

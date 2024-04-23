@@ -8,11 +8,19 @@
   <script src="./index.js"></script>
 </head>
 <body>
-  <div id="output"></div>
-  <div id="input"></div>
-
   <script type="text/javascript">
-    // ...
+    template = "{{output}} = {{a}} + {{b}}";
+
+    function compute({a, b}){
+      return a + b;
+    }
+
+    initialize({
+      a: {
+        step: "b"
+      },
+      b: {}
+    })
   </script>
 </body>
 </html>
