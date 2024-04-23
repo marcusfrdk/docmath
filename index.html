@@ -11,50 +11,19 @@
 </head>
 <body>
   <script type="text/javascript">
-    // template = "{{a}} + {{b}} = {{output}}";
-    // fractions = 2;
-
-    equations = [
-      "{{a}} + {{b}} = {{c}}",
-      "{{c}} + {{a}} = {{d}}",
-      "{{d}} + 1 = {{e}}",
-    ];
+    equations = "{{a}} + {{b}} = {{c}}";
 
     function compute({a, b}){
-      const c = a + b;
-      const d = c + a;
-      const e = d + 1;
-
+      const c =  a + b;
       return {
-        c, 
-        d, 
-        e
+        c,
       };
     }
 
-    
-    
-    // return 1 -> 1
-    // return [1, 2] -> 1, 2
-    // return [[1, 2], [3, 4]] -> Matrix
-    // return {x: 1, y: 2} -> x: 1, y: 2
-    
-    // return 1
-    // return [1, 2]
-    // return [[1, 2], [3, 4]]
-    // return [{x: 1, y: 2}]
-
-    // return {
-    //   x: a + b,
-    //   y: a - b
-    // };
-
     init({
-      a: {
-      },
-      b: {
-      }
-    })
+      a: {},
+      b: {}
+    });
   </script>
 </body>
 </html>
