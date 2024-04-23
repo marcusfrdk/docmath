@@ -1,17 +1,17 @@
 let fractions;
 let equations;
 
-let _config; // Record<string, Record<string, number>>;
-let _values; // Record<string, number>
-let _references; // Record<string, {i: Record<string, string>, o: Record<string, string>}>;
+let _config;
+let _values;
+let _references;
 
 let _variables;
 let _answers;
 
+const DEFAULT_FRACTIONS = 3;
+
 // --- COMPUTE ---
 function recompute(){
-  console.log("Recomputing...");
-
   const args =  Object.keys(_values)
   .filter(key => _variables.includes(key))
   .reduce((obj, key) => {
@@ -19,11 +19,28 @@ function recompute(){
     return obj;
   }, {});
 
-  const values = {
+  let values = {
     ..._values,
     ...compute(args)
   };
 
+  // Apply fractions
+  if(typeof fractions !== "number"){
+    fractions = DEFAULT_FRACTIONS;
+  }
+
+  Object.entries(values).forEach(([key, value]) => {
+    if(typeof value === "number"){
+      console.log(fractions);
+      if(fractions === 0){
+        values[key] = Math.floor(value);
+      } else {
+        values[key] = parseFloat(value.toFixed(fractions));
+      };
+    };
+  });
+
+  // Update equations
   equations.forEach((equation, index) => {
     let output = equation;
     
