@@ -19,9 +19,22 @@ function recompute(){
     return obj;
   }, {});
 
-  const results = compute(args);
-  console.log(results);
+  const values = {
+    ..._values,
+    ...compute(args)
+  };
 
+  equations.forEach((equation, index) => {
+    let output = equation;
+    
+    Object.entries(values).forEach(([key, value]) => {
+      const val = value || key;
+      output = output.replaceAll(`{{${key}}}`, val);
+    });
+
+    const equationElement = document.getElementById(`equation-${index + 1}`);
+    equationElement.innerHTML = katex.renderToString(output, {throwOnError: false});
+  });
 }
 
 function onUpdate(event){
@@ -55,7 +68,7 @@ function onUpdate(event){
   _values[id] = Number(value);
 
   // console.log("Config:", _config);
-  console.log("Values:", _values);
+  // console.log("Values:", _values);
   // console.log("References:", _references);
   // console.log()
 
@@ -304,6 +317,8 @@ function init(config){
     const inputElement = document.getElementById(key);
     inputElement.addEventListener("input", onUpdate);
   });
+
+  recompute();
 }
 
 function onUnload(){
