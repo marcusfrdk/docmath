@@ -1,182 +1,134 @@
-let _values;
-let _options;
-let _references;
+let fractions;
+let equations;
 
-let template;
-let displayElement;
-let interactiveElement;
+function parseEquations(){
+  if(typeof equations === "string") equations = [equations];
 
-// const displayElement = document.getElementById('output');
-// const interactiveElement = document.getElementById('input');
+  // create a new set
+  let _variables = new Set();
+  let _answers = new Set();
 
-function getResult(result){
-  // console.log("result:", result);
-  if(typeof result === "string") return result;
-  else if(typeof result == "number") return String(result);
-  else if(Array.isArray(result)){
-    return result.map((value) => getResult(value)).join(", ");
-  }
-  else if(typeof result === "object"){
-    // console.log("x:", result);
-    // console.log(getResult(result[key]));
-    return Object.keys(result).map((key) => `${key}: ${result[key]}`).join(", ");
-  }
+  equations.forEach((equation, index) => {
+    const ans_regex = /=\s*\{\{([^{}]+)\}\}$/g;
+    const ans_match = ans_regex.exec(equation);
+    
+    if(ans_match) _answers.add(ans_match[1]);
 
-  return "-";
-};
-
-function recompute(){
-  const values = Object.keys(_values).reduce((acc, key) => {
-    const value = document.getElementById(key).value;
-    acc[key] = value === "" ? key : Number(value);
-    return acc;
-  }, {});
-
-  const result = getResult(compute(values));
-
-  // Update display
-  let output = template.replaceAll("{{output}}", result || "Error");
-
-  Object.entries(values).forEach(([key, value]) => {
-    console.log(key);
-    output = output.replaceAll(`{{${key}}}`, value === 0 || value ? value : key);
+    const var_matches = equation.match(/{{(.*?)}}/g).map((match) => match.replace(/{{|}}/g, ""));
+    
+    var_matches.forEach((var_match) => {
+      if(!_answers.has(var_match)) {
+        _variables.add(var_match);
+      };
+    });
   });
 
-  displayElement.innerHTML = output;
-};
-
-function onInput(event){
-  const id = event.srcElement.id;
-  const node = document.getElementById(id);
-  const config = _values[id];
-  let value = node.value || undefined;
-
-  // Validate
-  if(typeof config.min !== "undefined" && value < config.min){
-    value = config.min;
-    node.value = value;
-  }
-  
-  if(typeof config.max !== "undefined" && value > config.max){
-    value = config.max;
-    node.value = value;
-  }
-
-  // Update references
-  if(_references[id]){
-    Object.entries(_references[id]).forEach(([key, attributes]) => {
-      attributes.forEach(attribute => {
-        _values[key][attribute] = value;
-        document.getElementById(key)[attribute] = value;
-      });
-    });
-  }
-
-  _values[id].value = value;
-
-  recompute();
+  return [[..._variables], [..._answers]];
 }
 
-function initialize(initial, options){
-  // Error handling
-  if(typeof template !== "string"){
-    throw new Error("Invalid template string");
+function init(config){
+  // Equations
+  if(typeof equations === "undefined"){
+    throw new Error("No equations are defined.")
+  }
+  
+  const [variableDefinitions, answerDefinitions] = parseEquations(equations);
+
+  // console.log("Variables:", variableDefinitions);
+  // console.log("Answers:", answerDefinitions);
+  
+  // Check if any values are both defined and computed
+  const common = variableDefinitions.filter(value => answerDefinitions.includes(value));
+  if(common.length > 0){
+    throw new Error(`Variable${common.length === 1 ? "" : "s"} ${common.join(", ")} ${common.length === 1 ? "is" : "are"} both defined and computed.`);
   }
 
-  if(typeof compute !== "function"){
-    throw new Error("Invalid compute function");
+  // Undefined variables
+  variableDefinitions.forEach(key => {
+    if(!config.hasOwnProperty(key)){
+      throw new Error(`Undefined variable '${key}' in config.`);
+    }
+  });
+
+  // Answer defined in config
+  answerDefinitions.forEach(key => {
+    if(config.hasOwnProperty(key)){
+      throw new Error(`Cannot define variable '${key}' in config since it is a computed value.`);
+    }
+  });
+
+  // Fractions
+  if(typeof fractions !== "undefined"){
+    if(typeof fractions !== "number"){
+      throw new Error("Fractions must be a number.");
+    }
+
+    if(fractions < 0){
+      throw new Error("Fractions must be a positive integer.");
+    }
   }
 
-  // Parent nodes
-  displayElement = document.createElement('div');
-  displayElement.id = 'display';
-  
-  interactiveElement = document.createElement('div');
-  interactiveElement.id = 'interactive';
-  
-  // Values
-  const inputAttributes = ["value", "step", "min", "max"];
+  // Types
+  const validTypes = {
+    "min": ["number", "string", "undefined"],
+    "max": ["number", "string", "undefined"],
+    "default": ["number", "undefined"],
+    "step": ["number", "undefined"],
+  };
 
-  const values = {};
-  const keys = Object.keys(initial);
-  const references = keys.reduce((acc, key) => {
+  Object.entries(config).forEach(([key, value]) => {
+    console.log(value);
+
+    if(typeof value !== "object"){
+      throw new Error(`Invalid type for '${key}'.`);
+    }
+
+    Object.entries(value).forEach(([attribute, val]) => {
+      if(!validTypes.hasOwnProperty(attribute)){
+        throw new Error(`Invalid attribute '${attribute}' for '${key}'.`);
+      }
+
+      if(!validTypes[attribute].includes(typeof val)){
+        throw new Error(`Invalid type for '${key}.${attribute}'.`);
+      }
+    });
+  });
+
+  // References
+  const configKeys = Object.keys(config);
+  const attributes = ["min", "max"];
+  const references = configKeys.reduce((acc, key) => {
     acc[key] = {};
     return acc;
   }, {});
 
-  Object.entries(initial).forEach(([key, config]) => {
-    values[key] = {};
-    
-    // Default values
-    inputAttributes.forEach(attribute => {
-      if(typeof config[attribute] !== "undefined"){
-        values[key][attribute] = config[attribute];
-      }
-    });
-    
-    // References
-    Object.entries(config).forEach(([attribute, value]) => {
-      if(typeof value === "string"){
-        // Check if key exists
-        if(keys.includes(value)){
-          // Add reference to referenced node
-          if(Array.isArray(references[value][key])){
-            references[value][key].push(attribute);
-          } else {
-            references[value][key] = [attribute];
-          }
-  
-          // Set value
-          // values[key][attribute] = initial[value]?.[attribute]; // Reference any attribute
-          values[key][attribute] = initial[value].value; // Reference value only
+  Object.entries(config).forEach(([key, value]) => {
+    attributes.forEach(attribute => {
+      if(typeof value[attribute] !== "undefined"){
+        // Undefined reference
+        if(!configKeys.includes(value[attribute])){
+          throw new Error(`Undefined reference '${value[attribute]}' for '${key}.${attribute}'.`);
+        }
+
+        // Self reference
+        if(value[attribute] === key){
+          throw new Error(`Self reference found '${key}.${attribute}'.`);
+        }
+
+        // Circular reference
+        if(config[value[attribute]].hasOwnProperty(attribute)){
+          throw new Error(`Circular reference between '${key}' and '${value[attribute]}'.`);
+        }
+
+        // Add reference
+        if(Array.isArray(references[key][value[attribute]])){
+          references[key][value[attribute]].push(attribute);
+        } else {
+          references[key][value[attribute]] = [attribute];
         }
       }
     });
   });
 
-  // Child nodes
-  Object.entries(values).forEach(([key, attribute]) => {
-    const containerElement = document.createElement('div');
-
-    const labelElement = document.createElement('label');
-    labelElement.textContent = key;
-    containerElement.appendChild(labelElement);
-
-    const inputElement = document.createElement('input');
-    inputElement.id = key;
-    inputElement.type = "number";
-    
-    Object.entries(attribute).forEach(([attribute, value]) => {
-      if(typeof value !== "undefined"){
-        inputElement[attribute] = value;
-      }
-    });
-
-    containerElement.appendChild(inputElement);
-    interactiveElement.appendChild(containerElement);
-  })
-  
-  // Set globals
-  _references = references;
-  _values = values;
-  _options = options;
-
-  document.body.appendChild(displayElement);
-  document.body.appendChild(interactiveElement);
-
-  // Register event listeners
-  Object.keys(_values).forEach(key => {
-    const inputElement = document.getElementById(key);
-    inputElement.addEventListener("input", onInput);
-  });
-
-  // Render
-  recompute();
-}
-
-function onUnload(){
-  Object.keys(_values).forEach(key => {
-    const inputElement = document.getElementById(key);
-    inputElement.removeEventListener("input", onInput);
-  });
+  // console.log("References:", references);
 }

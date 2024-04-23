@@ -9,22 +9,45 @@
 </head>
 <body>
   <script type="text/javascript">
-    template = "{{a}} + {{b}} = {{output}}";
+    // template = "{{a}} + {{b}} = {{output}}";
+    // fractions = 0;
 
-    function compute({a, b}){
-      return {
-        x: a + b,
-        y: a - b
-      };
+    equations = [
+      "{{a}} + {{b}} = {{c}}",
+      "{{c}} + {{a}} = {{d}}",
+      "{{d}} + 1",
+    ];
+
+    // equations = "{{a}} + {{b}} = {{output}}";
+
+    // -> number, number[], number[][] or Record<string, number>
+    function compute({a, b, ans, ans_2}){
+      return [
+        a + b,
+        ans + a
+      ];
+
+      // return 1 -> 1
+      // return [1, 2] -> 1, 2
+      // return [[1, 2], [3, 4]] -> Matrix
+      // return {x: 1, y: 2} -> x: 1, y: 2
+
+      // return {
+      //   x: a + b,
+      //   y: a - b
+      // };
     }
 
-    initialize({
+    init({
       a: {
         step: 0.5,
-        // max: "b"
-        // min: 0
+        max: "b",
+        min: "b",
+        // default: 0
       },
       b: {
+        max: 10,
+        min: {a: "a"}
       }
     })
   </script>
