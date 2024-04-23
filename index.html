@@ -9,20 +9,22 @@
 </head>
 <body>
   <script type="text/javascript">
-    template = "{{output}} = {{a}} + {{b}}";
+    template = "{{a}} + {{b}} = {{output}}";
 
     function compute({a, b}){
-      return a + b;
+      return {
+        x: a + b,
+        y: a - b
+      };
     }
 
     initialize({
       a: {
-        step: 2,
-        min: 0,
-        max: "b"
+        step: 0.5,
+        // max: "b"
+        // min: 0
       },
       b: {
-        value: 11
       }
     })
   </script>

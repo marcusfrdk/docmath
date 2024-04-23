@@ -9,8 +9,72 @@ let interactiveElement;
 // const displayElement = document.getElementById('output');
 // const interactiveElement = document.getElementById('input');
 
+function getResult(result){
+  // console.log("result:", result);
+  if(typeof result === "string") return result;
+  else if(typeof result == "number") return String(result);
+  else if(Array.isArray(result)){
+    return result.map((value) => getResult(value)).join(", ");
+  }
+  else if(typeof result === "object"){
+    // console.log("x:", result);
+    // console.log(getResult(result[key]));
+    return Object.keys(result).map((key) => `${key}: ${result[key]}`).join(", ");
+  }
+
+  return "-";
+};
+
+function recompute(){
+  const values = Object.keys(_values).reduce((acc, key) => {
+    const value = document.getElementById(key).value;
+    acc[key] = value === "" ? key : Number(value);
+    return acc;
+  }, {});
+
+  const result = getResult(compute(values));
+
+  // Update display
+  let output = template.replaceAll("{{output}}", result || "Error");
+
+  Object.entries(values).forEach(([key, value]) => {
+    console.log(key);
+    output = output.replaceAll(`{{${key}}}`, value === 0 || value ? value : key);
+  });
+
+  displayElement.innerHTML = output;
+};
+
 function onInput(event){
-  console.log(event);
+  const id = event.srcElement.id;
+  const node = document.getElementById(id);
+  const config = _values[id];
+  let value = node.value || undefined;
+
+  // Validate
+  if(typeof config.min !== "undefined" && value < config.min){
+    value = config.min;
+    node.value = value;
+  }
+  
+  if(typeof config.max !== "undefined" && value > config.max){
+    value = config.max;
+    node.value = value;
+  }
+
+  // Update references
+  if(_references[id]){
+    Object.entries(_references[id]).forEach(([key, attributes]) => {
+      attributes.forEach(attribute => {
+        _values[key][attribute] = value;
+        document.getElementById(key)[attribute] = value;
+      });
+    });
+  }
+
+  _values[id].value = value;
+
+  recompute();
 }
 
 function initialize(initial, options){
@@ -63,8 +127,8 @@ function initialize(initial, options){
           }
   
           // Set value
-          // values[key][attribute] = initial[value]?.[attribute];
-          values[key][attribute] = initial[value].value;
+          // values[key][attribute] = initial[value]?.[attribute]; // Reference any attribute
+          values[key][attribute] = initial[value].value; // Reference value only
         }
       }
     });
@@ -92,14 +156,10 @@ function initialize(initial, options){
     interactiveElement.appendChild(containerElement);
   })
   
-  
   // Set globals
   _references = references;
   _values = values;
   _options = options;
-
-  // console.log("Values:", _values);
-  console.log("References:", _values["a"]);
 
   document.body.appendChild(displayElement);
   document.body.appendChild(interactiveElement);
@@ -107,13 +167,16 @@ function initialize(initial, options){
   // Register event listeners
   Object.keys(_values).forEach(key => {
     const inputElement = document.getElementById(key);
-    inputElement.addEventListener('input', onInput);
+    inputElement.addEventListener("input", onInput);
   });
+
+  // Render
+  recompute();
 }
 
 function onUnload(){
   Object.keys(_values).forEach(key => {
     const inputElement = document.getElementById(key);
-    inputElement.removeEventListener('input', onInput);
+    inputElement.removeEventListener("input", onInput);
   });
 }
