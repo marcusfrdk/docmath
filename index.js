@@ -3,7 +3,6 @@ let equations;
 
 let _config;
 let _values;
-let _references;
 
 let _variables;
 let _answers;
@@ -29,22 +28,37 @@ function recompute(){
     fractions = DEFAULT_FRACTIONS;
   }
 
-  Object.entries(values).forEach(([key, value]) => {
-    if(typeof value === "number"){
-      if(fractions === 0){
-        values[key] = Math.floor(value);
-      } else {
-        values[key] = parseFloat(value.toFixed(fractions));
-      };
-    };
-  });
+  // Object.entries(values).forEach(([key, value]) => {
+  //   if(typeof value === "number"){
+  //     if(fractions === 0){
+  //       values[key] = Math.floor(value);
+  //     } else {
+  //       values[key] = parseFloat(value.toFixed(fractions));
+  //     };
+  //   };
+  // });
 
   // Update equations
   equations.forEach((equation, index) => {
     let output = equation;
     
     Object.entries(values).forEach(([key, value]) => {
-      const val = value || key;
+      let val = Number(value) || key;
+
+      // Decimals
+      if(String(val).includes(".")){
+        const decimalPart = String(val).split(".")[1];
+        const leadingZeros = decimalPart.match(/^0*/)[0].length;
+        const decimals = decimalPart.length;
+
+        if(leadingZeros > fractions){
+          val = Number(value).toExponential(fractions);
+        }
+        else if(decimals > fractions){
+          val = parseFloat(value.toFixed(fractions));
+        }
+      }
+
       output = output.replaceAll(`{{${key}}}`, val);
     });
 
@@ -71,22 +85,7 @@ function onUpdate(event){
     node.value = value;
   }
 
-  // Update incoming references
-  if(_references[id]){
-    Object.entries(_references[id]["i"]).forEach(([key, attributes]) => {
-      attributes.forEach(attribute => {
-        _config[key][attribute] = value;
-        document.getElementById(key)[attribute] = value;
-      });
-    });
-  }
-
   _values[id] = Number(value);
-
-  // console.log("Config:", _config);
-  // console.log("Values:", _values);
-  // console.log("References:", _references);
-  // console.log()
 
   recompute();
 };
@@ -191,8 +190,8 @@ function init(config){
 
     // Types
     const validTypes = {
-      "min": ["number", "string", "undefined"],
-      "max": ["number", "string", "undefined"],
+      "min": ["number", "undefined"],
+      "max": ["number", "undefined"],
       "value": ["number", "undefined"],
       "step": ["number", "undefined"],
     };
@@ -214,64 +213,8 @@ function init(config){
       });
     });
 
-    // References
-    const configKeys = Object.keys(config);
-    const referenceAttributes = ["min", "max"];
-    const references = configKeys.reduce((acc, key) => {
-      acc[key] = {i: {}, o: {}};
-      return acc;
-    }, {});
-
-    Object.entries(config).forEach(([key, value]) => {
-      referenceAttributes.forEach(attribute => {
-        if(typeof value[attribute] === "string"){
-          // Undefined reference
-          if(!configKeys.includes(value[attribute])){
-            if(answerDefinitions.includes(value[attribute])){
-              throw new Error(`Only static values can be referenced at the moment, found computed value '${value[attribute]}' for '${key}.${attribute}'.`)
-            } else {
-              throw new Error(`Undefined reference '${value[attribute]}' for '${key}.${attribute}'.`);
-            }
-          }
-
-          // Self reference
-          if(value[attribute] === key){
-            throw new Error(`Self reference found for '${key}.${attribute}'.`);
-          }
-
-          // Add reference
-          if(Array.isArray(references[key][value[attribute]])){
-            references[key]["o"][value[attribute]].push(attribute);
-            references[value[attribute]]["i"][key].push(attribute);
-          } else {
-            references[key]["o"][value[attribute]] = [attribute];
-            references[value[attribute]]["i"][key] = [attribute];
-          }
-        }
-      });
-    });
-
-    // Circular references
-    Object.entries(references).forEach(([key, value]) => {
-      Object.entries(value["o"]).forEach(([ref, attributes]) => {
-        if(value["i"].hasOwnProperty(ref)){
-          throw new Error(`Circular reference between '${key}' and '${ref}'.`);
-        }
-      });
-    });
-
-    // Update config
-    Object.entries(config).forEach(([key, value]) => {
-      referenceAttributes.forEach(attribute => {
-        if(typeof value[attribute] === "string"){
-          config[key][attribute] = config[value[attribute]][attribute];
-        }
-      });
-    });
-
     // Set global variables
     _config = config;
-    _references = references;
     _values = Object.entries(config).reduce((acc, [key, value]) => {
       acc[key] = typeof value.value === "number" ? value.value : NaN;
       return acc;
@@ -309,12 +252,7 @@ function init(config){
       inputAttributes.forEach((attribute) => {
         let value;
 
-        if(referenceAttributes.includes(attribute)){
-          const key = _config[variable][attribute];
-          value = typeof _values[key] === "number" ? _values[key] : _config[variable][attribute];
-        } else {
-          value = _config[variable][attribute];
-        }
+        value = _config[variable][attribute];
 
         if(typeof value !== "undefined"){
           inputElement.setAttribute(attribute, value);

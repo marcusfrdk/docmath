@@ -12,26 +12,32 @@
 <body>
   <script type="text/javascript">
     fractions = 2;
-    equations = "\\frac{-{{b}}\\pm\\sqrt{{{b}}^2 - 4 * {{a}} * {{c}}}}{2 * {{a}}} = {{output}}";
 
-    function compute({a, b, c}){
-      const discriminant = Math.pow(b, 2) - 4 * a * c;
-      const x1 = (-b + Math.sqrt(discriminant)) / (2 * a);
-      const x2 = (-b - Math.sqrt(discriminant)) / (2 * a);
+    equations = [
+      "{{a}} + {{b}} = {{c}}",
+      "{{c}}^2 = {{d}}",
+      "\\frac{1}{{{d}}} = {{e}}"
+    ];
+
+    function compute({a, b}){
+      const c = a + b;
+      const d = Math.pow(c, 2);
+      // const e = (1 / d).toExponential(fractions);
+      const e = 1 / d;
       
       return {
-        output: `x_1: ${x1 || "-"}, x_2: ${x2 || "-"}`
+        c, d, e
       };
     }
 
-    init({
-      a: {
-        min: 1,
-        value: 1
-      },
-      b: {},
-      c: {}
-    });
+    try {
+      init({
+        a: {},
+        b: {}
+      });
+    } catch(err) {
+      console.log(err);
+    }
   </script>
 </body>
 </html>

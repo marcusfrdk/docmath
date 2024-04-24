@@ -17,11 +17,8 @@
 
   background-color: var(--background);
   padding: 1rem;
-  min-height: 100vh;
-  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
   align-items: center;
 }
 
