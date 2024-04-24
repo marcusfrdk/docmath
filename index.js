@@ -125,6 +125,10 @@ function recompute(){
   });
 }
 
+function onFocus(event){
+  event.srcElement.select();
+}
+
 function onInput(event){
   const id = event.srcElement.id;
   const node = document.getElementById(id);
@@ -205,7 +209,6 @@ function parseEquations(){
           if(j === 0){
             if(!_defined.has(variable)) _defined.add(variable);
           } else {
-            console.log(variable, _defined, _computed)
             if(_defined.has(variable)){
               return handleError(`Variable '${variable}' is a defined value.`);
             }
@@ -472,6 +475,7 @@ function init(config){
         for(let j = 0; j < tableElement.rows[i].cells.length; j++){
           const inputElement = tableElement.rows[i].cells[j].children[0];
           inputElement.addEventListener("input", onMatrix);
+          inputElement.addEventListener("focus", onFocus);
         }
       }
     }
@@ -479,6 +483,7 @@ function init(config){
     else {
       const inputElement = document.getElementById(key);
       inputElement.addEventListener("input", onInput);
+      inputElement.addEventListener("focus", onFocus);
     };
   });
 
@@ -497,6 +502,7 @@ function onUnload(){
         for(let j = 0; j < tableElement.rows[i].cells.length; j++){
           const inputElement = tableElement.rows[i].cells[j].children[0];
           inputElement.removeEventListener("input", onMatrix);
+          inputElement.removeEventListener("focus", onFocus);
         }
       }
     }
@@ -504,6 +510,7 @@ function onUnload(){
     else {
       const inputElement = document.getElementById(key);
       inputElement.removeEventListener("input", onInput);
+      inputElement.removeEventListener("focus", onFocus);
     }
   });
 }
