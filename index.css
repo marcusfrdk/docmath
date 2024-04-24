@@ -29,7 +29,7 @@ body {
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  gap: 1rem;
+  gap: 2rem;
 }
 
 #equations {
@@ -39,6 +39,9 @@ body {
   align-items: center;
   gap: 1rem;
   /* font-size: 1.25em; */
+  /* border: 0.125rem solid var(--bottom);
+  padding: 1rem;
+  border-radius: 0.25rem; */
 }
 
 #variables {

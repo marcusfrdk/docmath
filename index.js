@@ -4,8 +4,8 @@ let equations;
 let _config;
 let _values;
 
-let _variables;
-let _answers;
+let _defined;
+let _computed;
 
 const MATRIX_ATTRIBUTES = ["rows", "cols", "matrix"];
 const DEFAULT_FRACTIONS = 3;
@@ -18,7 +18,7 @@ function isMatrix(value){
 // --- COMPUTE ---
 function recompute(){
   const args =  Object.keys(_values)
-  .filter(key => _variables.includes(key))
+  .filter(key => _defined.includes(key))
   .reduce((obj, key) => {
     obj[key] = _values[key];
     return obj;
@@ -45,16 +45,34 @@ function recompute(){
       }
 
       if(Array.isArray(value)){
-        // console.log("Matrix", key, value);
         let template = `
           \\begin{bmatrix}
             ${value.map(row => {
-              return row.map(cell => typeof cell === "number" ? cell : "").join(" & ");
+              return row.map(cell => {
+                if(typeof cell === "number"){
+                  return String(cell).includes(".") ? cell.toFixed(2) : cell;
+                } 
+                return "";
+              }).join(" & ");
             }).join(" \\\\") }
           \\end{bmatrix}
         `;
 
         output = output.replaceAll(`{{${key}}}`, template);
+      } else if(typeof value === "object"){
+        // Eigenvectors
+        if(value.hasOwnProperty("eigenvectors")){
+          const values = Object.values(value.eigenvectors).map(({value}) => {
+            if(typeof value === "number"){
+              return String(value).includes(".") ? value.toFixed(2) : value;
+            }
+            return "";
+          });
+          const string = `EigenValues(${values.join(", ")})`;
+          output = output.replaceAll(`{{${key}}}`, string);
+        } else {
+          output = output.replaceAll(`{{${key}}}`, "\\text{Unsupported object}");
+        }
       } else {
         let val = value || key;
   
@@ -131,29 +149,53 @@ function onMatrix(event){
 }
 
 // --- INITIALIZATION ---
+function getVariables(equation){
+  const matches = equation.match(/\{\{([^{}]+)\}\}/g);
+  if(!matches) return [];
+  return [...new Set(matches.map((match) => match.replace(/[^A-Z0-9_]/gi, "")))];
+}
+
 function parseEquations(){
   if(typeof equations === "string") equations = [equations];
 
   // Create a new set
-  let _variables = new Set();
-  let _answers = new Set();
+  let _defined = new Set();
+  let _computed = new Set();
 
-  equations.forEach((equation, index) => {
-    const ans_regex = /=\s*\{\{([^{}]+)\}\}$/g;
-    const ans_match = ans_regex.exec(equation);
-    
-    if(ans_match) _answers.add(ans_match[1]);
+  equations.forEach((equation, i) => {
+    const definition = equation.replace(/\s/g, "");
+    let sides = definition.split("=").filter(f => f);
 
-    const var_matches = equation.match(/{{(.*?)}}/g).map((match) => match.replace(/{{|}}/g, "").replace(/[^A-Za-z0-9_]/g, ""));
-    
-    var_matches.forEach((var_match) => {
-      if(!_answers.has(var_match)) {
-        _variables.add(var_match);
-      };
-    });
+    if(sides.length === 1){
+      console.log("Equation", i + 1, "is a definition.")
+      
+      getVariables(sides[0]).forEach((variable) => {
+        if(!_defined.has(variable) && !_computed.has(variable)) _defined.add(variable);
+      });
+    } else if(sides.length === 0){
+      throw new Error(`Equation ${i + 1} has no content.`);
+    } else {
+      console.log("Equation", i + 1, "is a computation.");
+
+      sides.forEach((side, j) => {
+        getVariables(side).forEach((variable) => {
+          if(j === 0){
+            if(!_defined.has(variable)) _defined.add(variable);
+          } else {
+            console.log(variable, _defined, _computed)
+            if(_defined.has(variable)){
+              throw new Error(`Variable '${variable}' is a defined value.`);
+            }
+
+            if(!_computed.has(variable)) _computed.add(variable);
+          }
+        });
+      });
+
+    }
   });
 
-  return [[..._variables], [..._answers]];
+  return [[..._defined], [..._computed]];
 }
 
 function init(config){
@@ -162,30 +204,34 @@ function init(config){
     throw new Error("No equations are defined.")
   }
   
-  const [variableDefinitions, answerDefinitions] = parseEquations(equations);
-
-  // Check if any values are both defined and computed
-  const common = variableDefinitions.filter(value => answerDefinitions.includes(value));
-  if(common.length > 0){
-    throw new Error(`Variable${common.length === 1 ? "" : "s"} ${common.join(", ")} ${common.length === 1 ? "is" : "are"} both defined and computed.`);
-  }
+  const [definedDefinitions, computedDefinitions] = parseEquations(equations);
 
   // Undefined variables
-  variableDefinitions.forEach(key => {
+  definedDefinitions.forEach(key => {
     if(!config.hasOwnProperty(key)){
       throw new Error(`Undefined variable '${key}' in config.`);
     }
   });
 
   // Answer defined in config
-  answerDefinitions.forEach(key => {
+  computedDefinitions.forEach(key => {
     if(config.hasOwnProperty(key)){
       throw new Error(`Cannot define variable '${key}' in config since it is a computed value.`);
     }
   });
 
-  _variables = variableDefinitions;
-  _answers = answerDefinitions;
+  _defined = definedDefinitions;
+  _computed = computedDefinitions;
+
+  // Remove unused keys
+  const allKeys = Object.keys(config);
+  const usedKeys = [..._defined, ..._computed];
+
+  allKeys.forEach(key => {
+    if(!usedKeys.includes(key)){
+      delete config[key];
+    }
+  });
 
   // Validate compute function
   if(typeof compute === "undefined"){
@@ -216,15 +262,11 @@ function init(config){
 
   const returnVariables = [...new Set(keyMatches.map((match) => match.replace(/\s/g, "").replace(/:|,/g, "")))];
 
-  const missingVariables = answerDefinitions.filter(variable => !returnVariables.includes(variable));
-  const redundantVariables = returnVariables.filter(variable => !answerDefinitions.includes(variable));
+  // compute() returns all required variables
+  const missingComputedValues = computedDefinitions.filter(variable => !returnVariables.includes(variable));
 
-  if(missingVariables.length > 0){
-    throw new Error(`Missing variable${missingVariables.length === 1 ? "" : "s"} ${missingVariables.join(", ")} in the compute function's return value.`);
-  }
-
-  if(redundantVariables.length > 0){
-    throw new Error(`Redundant variable${redundantVariables.length === 1 ? "" : "s"} ${redundantVariables.join(", ")} in the compute function's return value.`);
+  if(missingComputedValues.length > 0){
+    throw new Error(`Missing variable${missingComputedValues.length === 1 ? "" : "s"} ${missingComputedValues.join(", ")} in the compute function's return value.`);
   }
 
   // Fractions
@@ -299,7 +341,6 @@ function init(config){
 
   // DOM
   const inputAttributes = ["step", "min", "max", "value"];
-  const matrixAttributes = ["rows", "cols", "matrix"];
 
   const equationsElement = document.createElement("div");
   equationsElement.id = "equations";
@@ -314,7 +355,7 @@ function init(config){
     equationsElement.appendChild(equationElement);
   });
 
-  variableDefinitions.sort().forEach((variable) => {
+  definedDefinitions.sort().forEach((variable) => {
     const containerElement = document.createElement("div");
 
     const labelElement = document.createElement("label");

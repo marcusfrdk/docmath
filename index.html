@@ -15,27 +15,27 @@
     fractions = 2;
 
     equations = [
-      "{{A}} * {{a}} = {{C}}"
+      // "= {{A}}", // not valid
+      // "{{B}} = {{A}}", // valid
+      // "{{A}} = {{B}} = {{C}}", // valid
+      // "{{A}}",
+      // "{{A}} =", // invalid
+      // "{{B}} + {{B}} = {{A}}",
+      // "{{a}} + {{b}} = {{c}}",
+      "{{a}} + {{b}}"
+      // "{{A}} + {{B}} = {{D}}",
+      // "{{A}} + {{A}} = {{A}} + 1",
     ];
 
-    function compute({A, a}){
-
+    function compute({a, b}){
       return {
-        // C: math.multiply(math.matrix(A), a)
-        // C: math.det(math.matrix(A))
-        C: math.multiply(math.transpose(math.matrix(A)), a)
-      };
+        // c: a + b
+      }
     }
 
     init({
       a: {},
-      A: {
-        min: 5,
-        max: 50,
-        rows: 2,
-        cols: 10,
-        // matrix: [[1, 2, 3], [3, 4, 3]]
-      }
+      b: {}
     });
   </script>
 </body>
