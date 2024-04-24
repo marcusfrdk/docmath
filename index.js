@@ -43,7 +43,7 @@ function recompute(){
     let output = equation;
     
     Object.entries(values).forEach(([key, value]) => {
-      let val = Number(value) || key;
+      let val = value || key;
 
       // Decimals
       if(String(val).includes(".")){
@@ -51,11 +51,15 @@ function recompute(){
         const leadingZeros = decimalPart.match(/^0*/)[0].length;
         const decimals = decimalPart.length;
 
+        // Scientific notation
         if(leadingZeros > fractions){
           val = Number(value).toExponential(fractions);
         }
+        // Fixed number of decimals
         else if(decimals > fractions){
           val = parseFloat(value.toFixed(fractions));
+
+          if(val === 0) val = Number(value).toExponential(fractions);
         }
       }
 
