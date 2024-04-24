@@ -15,28 +15,18 @@
     fractions = 2;
 
     equations = [
-      // "= {{A}}", // not valid
-      // "{{B}} = {{A}}", // valid
-      // "{{A}} = {{B}} = {{C}}", // valid
-      // "{{A}}",
-      // "{{A}} =", // invalid
-      // "{{B}} + {{B}} = {{A}}",
-      // "{{a}} + {{b}} = {{c}}",
-      "{{a}} + {{b}} = {{c}}",
-      "{{A}}"
-      // "{{A}} + {{B}} = {{D}}",
-      // "{{A}} + {{A}} = {{A}} + 1",
+      "EigenValues({{A}}) = {{B}}"
     ];
 
-    function compute({a, b}){
+    function compute({A}){
       return {
-        c: a + b
+        B: math.eigs(A),
       }
     }
 
     init({
       A: {
-        rows: 2
+        matrix: [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
       }
     });
   </script>
