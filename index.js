@@ -222,6 +222,9 @@ function parseEquations(){
 }
 
 function init(config){
+  // Config
+  config = config || {};
+
   // Equations
   if(typeof equations === "undefined"){
     return handleError("No equations are defined.")
@@ -232,7 +235,7 @@ function init(config){
   // Undefined variables
   definedDefinitions.forEach(key => {
     if(!config.hasOwnProperty(key)){
-      return handleError(`Undefined variable '${key}' in config.`);
+      config[key] = {};
     }
   });
 
