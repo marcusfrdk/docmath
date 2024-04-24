@@ -15,6 +15,28 @@ function isMatrix(value){
   return typeof value === "object" && MATRIX_ATTRIBUTES.some(attribute => value.hasOwnProperty(attribute));
 }
 
+function handleError(error){
+  console.error(error);
+
+
+  const equations = document.getElementById("equations");
+  const variables = document.getElementById("variables");
+
+  if(equations) equations.remove();
+  if(variables) variables.remove();
+
+  document.body.style.display = "flex";
+  document.body.style.justifyContent = "center";
+  document.body.style.alignItems = "center";
+  document.body.style.padding = "0";
+  document.body.style.height = "100dvh";
+  document.documentElement.style.padding = "0";
+
+  const errorMessage = document.createElement("p");
+  errorMessage.textContent = error;
+  document.body.appendChild(errorMessage);
+}
+
 // --- COMPUTE ---
 function recompute(){
   const args =  Object.keys(_values)
@@ -149,6 +171,7 @@ function onMatrix(event){
 }
 
 // --- INITIALIZATION ---
+
 function getVariables(equation){
   const matches = equation.match(/\{\{([^{}]+)\}\}/g);
   if(!matches) return [];
@@ -167,15 +190,15 @@ function parseEquations(){
     let sides = definition.split("=").filter(f => f);
 
     if(sides.length === 1){
-      console.log("Equation", i + 1, "is a definition.")
+      // console.log("Equation", i + 1, "is a definition.")
       
       getVariables(sides[0]).forEach((variable) => {
         if(!_defined.has(variable) && !_computed.has(variable)) _defined.add(variable);
       });
     } else if(sides.length === 0){
-      throw new Error(`Equation ${i + 1} has no content.`);
+      return handleError(`Equation ${i + 1} has no content.`);
     } else {
-      console.log("Equation", i + 1, "is a computation.");
+      // console.log("Equation", i + 1, "is a computation.");
 
       sides.forEach((side, j) => {
         getVariables(side).forEach((variable) => {
@@ -184,7 +207,7 @@ function parseEquations(){
           } else {
             console.log(variable, _defined, _computed)
             if(_defined.has(variable)){
-              throw new Error(`Variable '${variable}' is a defined value.`);
+              return handleError(`Variable '${variable}' is a defined value.`);
             }
 
             if(!_computed.has(variable)) _computed.add(variable);
@@ -201,7 +224,7 @@ function parseEquations(){
 function init(config){
   // Equations
   if(typeof equations === "undefined"){
-    throw new Error("No equations are defined.")
+    return handleError("No equations are defined.")
   }
   
   const [definedDefinitions, computedDefinitions] = parseEquations(equations);
@@ -209,14 +232,14 @@ function init(config){
   // Undefined variables
   definedDefinitions.forEach(key => {
     if(!config.hasOwnProperty(key)){
-      throw new Error(`Undefined variable '${key}' in config.`);
+      return handleError(`Undefined variable '${key}' in config.`);
     }
   });
 
   // Answer defined in config
   computedDefinitions.forEach(key => {
     if(config.hasOwnProperty(key)){
-      throw new Error(`Cannot define variable '${key}' in config since it is a computed value.`);
+      return handleError(`Cannot define variable '${key}' in config since it is a computed value.`);
     }
   });
 
@@ -235,7 +258,7 @@ function init(config){
 
   // Validate compute function
   if(typeof compute === "undefined"){
-    throw new Error("No compute function is defined.")
+    return handleError("No compute function is defined.")
   }
 
   const computeString = compute.toString().replace(/'[^']*'|"[^"]*"|`[^`]*`/g, "");
@@ -243,7 +266,7 @@ function init(config){
   const returnMatch = returnRegex.exec(computeString);
   
   if(!returnMatch){
-    throw new Error("No return statement found in compute function.");
+    return handleError("No return statement found in compute function.");
   }
   
   const removeRhsRegex = /:\s*("[^"]*"|[^,}]*)/g;
@@ -266,17 +289,17 @@ function init(config){
   const missingComputedValues = computedDefinitions.filter(variable => !returnVariables.includes(variable));
 
   if(missingComputedValues.length > 0){
-    throw new Error(`Missing variable${missingComputedValues.length === 1 ? "" : "s"} ${missingComputedValues.join(", ")} in the compute function's return value.`);
+    return handleError(`Missing variable${missingComputedValues.length === 1 ? "" : "s"} ${missingComputedValues.join(", ")} in the compute function's return value.`);
   }
 
   // Fractions
   if(typeof fractions !== "undefined"){
     if(typeof fractions !== "number"){
-      throw new Error("Fractions must be a number.");
+      return handleError("Fractions must be a number.");
     }
 
     if(fractions < 0){
-      throw new Error("Fractions must be a positive integer.");
+      return handleError("Fractions must be a positive integer.");
     }
   }
 
@@ -293,7 +316,7 @@ function init(config){
 
   Object.entries(config).forEach(([key, value]) => {
     if(typeof value !== "object"){
-      throw new Error(`Invalid type for '${key}'.`);
+      return handleError(`Invalid type for '${key}'.`);
     }
 
     // Matrix
@@ -304,19 +327,19 @@ function init(config){
 
       if(hasMatrix && (hasRows || hasCols)){
         const attributes = hasRows && hasCols ? "'rows' and 'cols'" : hasRows ? "'rows'" : "'cols'";
-        throw new Error(`Cannot define 'matrix' and ${attributes} together for '${key}'.`);
+        return handleError(`Cannot define 'matrix' and ${attributes} together for '${key}'.`);
       }
     }
 
     // Attributes
     Object.entries(value).forEach(([attribute, val]) => {
       if(!validTypes.hasOwnProperty(attribute)){
-        throw new Error(`Invalid attribute '${attribute}' for '${key}'.`);
+        return handleError(`Invalid attribute '${attribute}' for '${key}'.`);
       }
 
       if(!validTypes[attribute].includes(typeof val)){
         const expectedTypes = validTypes[attribute].join(", ");
-        throw new Error(`Invalid type for '${key}.${attribute}', got '${typeof val}', expected one of ${expectedTypes}.`);
+        return handleError(`Invalid type for '${key}.${attribute}', got '${typeof val}', expected one of ${expectedTypes}.`);
       }
     });
   });
