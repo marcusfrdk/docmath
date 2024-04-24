@@ -96,7 +96,7 @@ function recompute(){
           output = output.replaceAll(`{{${key}}}`, "\\text{Unsupported object}");
         }
       } else {
-        let val = value || key;
+        let val = Number(value) || key;
   
         // Decimals
         if(String(val).includes(".")){

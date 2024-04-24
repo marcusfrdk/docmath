@@ -7,28 +7,30 @@
   <link rel="stylesheet" href="./index.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-rc.1/dist/katex.css">
   <script src="https://cdn.jsdelivr.net/npm/katex@0.10.0-rc.1/dist/katex.js"></script>
-  <script src="https://unpkg.com/mathjs@12.4.1/lib/browser/math.js"></script>
+  <!-- <script src="https://unpkg.com/mathjs@12.4.1/lib/browser/math.js"></script> -->
   <script src="./index.js"></script>
 </head>
 <body>
   <script type="text/javascript">
-    fractions = 2;
-
     equations = [
-      "EigenValues({{A}}) = {{B}}"
+      "\\frac{-{{b}}\\pm\\sqrt{{{b}}^2 - 4 * {{a}} * {{c}}}}{2 * {{a}}} = x_1: {{x1}}, x_2: {{x2}}"
     ];
 
-    function compute({A}){
+    function compute({a, b, c}){
+      const discriminant = Math.pow(b, 2) - 4 * a * c;
+
+      console.log({
+        x1: ((-b + Math.sqrt(discriminant)) / (2 * a)).toFixed(0),
+        x2: ((-b - Math.sqrt(discriminant)) / (2 * a)).toFixed(0)
+      })
+
       return {
-        B: math.eigs(A),
-      }
+        x1: ((-b + Math.sqrt(discriminant)) / (2 * a)).toFixed(0),
+        x2: ((-b - Math.sqrt(discriminant)) / (2 * a)).toFixed(0)
+      };
     }
 
-    init({
-      A: {
-        matrix: [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-      }
-    });
+    init();
   </script>
 </body>
 </html>
