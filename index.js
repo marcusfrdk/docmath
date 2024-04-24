@@ -267,37 +267,6 @@ function init(config){
     return handleError("No compute function is defined.")
   }
 
-  const computeString = compute.toString().replace(/'[^']*'|"[^"]*"|`[^`]*`/g, "");
-  const returnRegex = /return\s+((?:[^;\n]*\{[^\}]*\})|(?:[^;\n]*))(?=(;|\/\/|\/\*|$))/gm;
-  const returnMatch = returnRegex.exec(computeString);
-  
-  if(!returnMatch){
-    return handleError("No return statement found in compute function.");
-  }
-  
-  const removeRhsRegex = /:\s*("[^"]*"|[^,}]*)/g;
-  const removeParRegex = /\([^()]*\)/g;
-  const removeCommentRegex = /\/\/[^\n]*|\/\*[^]*?\*\//g;
-  
-  let returnStatement = (returnMatch.length < 1 ? returnMatch.join("") : returnMatch[1]);
-  returnStatement = returnStatement.replace(removeCommentRegex, "").replace(/\s|\/\//g, "");
-
-  while(returnStatement.includes("(") || returnStatement.includes(")")){
-    returnStatement = returnStatement.replace(removeParRegex, "");
-  }
-  returnStatement = returnStatement.replace(removeRhsRegex, "").replace(/[^A-Z0-9_,\{\}]/gi, "");
-  const keyRegex = /[{(,]\s*[A-Za-z0-9_]+:?/g;
-  const keyMatches = (returnStatement.match(keyRegex) || []).map(match => match.replace(/[^A-Za-z0-9_]/g, ""));
-
-  const returnVariables = [...new Set(keyMatches.map((match) => match.replace(/\s/g, "").replace(/:|,/g, "")))];
-
-  // compute() returns all required variables
-  const missingComputedValues = computedDefinitions.filter(variable => !returnVariables.includes(variable));
-
-  if(missingComputedValues.length > 0){
-    return handleError(`Missing variable${missingComputedValues.length === 1 ? "" : "s"} ${missingComputedValues.join(", ")} in the compute function's return value.`);
-  }
-
   // Fractions
   if(typeof fractions !== "undefined"){
     if(typeof fractions !== "number"){

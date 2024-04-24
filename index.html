@@ -13,22 +13,14 @@
 <body>
   <script type="text/javascript">
     equations = [
-      "\\frac{-{{b}}\\pm\\sqrt{{{b}}^2 - 4 * {{a}} * {{c}}}}{2 * {{a}}} = x_1: {{x1}}, x_2: {{x2}}"
+      "{{a}} + {{b}} = {{c}}"
     ];
 
-    function compute({a, b, c}){
-      const discriminant = Math.pow(b, 2) - 4 * a * c;
-
-      console.log({
-        x1: ((-b + Math.sqrt(discriminant)) / (2 * a)).toFixed(0),
-        x2: ((-b - Math.sqrt(discriminant)) / (2 * a)).toFixed(0)
-      })
-
+    function compute({a, b}){
       return {
-        x1: ((-b + Math.sqrt(discriminant)) / (2 * a)).toFixed(0),
-        x2: ((-b - Math.sqrt(discriminant)) / (2 * a)).toFixed(0)
-      };
-    }
+        c: a + b
+      }	
+    };
 
     init();
   </script>
