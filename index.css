@@ -38,7 +38,7 @@ body {
   justify-content: flex-start;
   align-items: center;
   gap: 1rem;
-  font-size: 1.25em;
+  /* font-size: 1.25em; */
 }
 
 #variables {
@@ -46,7 +46,7 @@ body {
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
 }
 
 #variables > div {
@@ -59,6 +59,7 @@ body {
 
 #variables > div > label {
   /* font-weight: bold; */
+  white-space: nowrap;
   font-size: 1.25rem;
 }
 
@@ -73,4 +74,50 @@ body {
 
 #variables > div > input:focus-visible {
   outline: 0.125rem solid var(--strong);
+}
+
+table.matrix {
+  border-collapse: collapse;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+table.matrix tr {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+table.matrix td {
+  height: 2.5rem;
+  width: 2.5rem;
+  border: 0.125rem solid var(--bottom);
+  border-radius: 0.25rem;
+}
+
+table.matrix td input {
+  background: none;
+  outline: none;
+  height: 100%;
+  width: 100%;
+  font-size: 1rem;
+  text-align: center;
+  border: none;
+  border-radius: 0.25rem;
+}
+
+table.matrix td input:focus-visible {
+  outline: 0.125rem solid var(--strong);
+}
+
+table.matrix td input[type=number]::-webkit-inner-spin-button,
+table.matrix td input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }

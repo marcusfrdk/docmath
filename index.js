@@ -110,14 +110,22 @@ function onInput(event){
 
 function onMatrix(event){
   const id = event.srcElement.id;
-  const node = document.getElementById(id);
-  const value = parseFloat(node.value) ?? undefined;
-
   const [variable, row, col] = id.split("-");
+  const node = document.getElementById(id);
+  const config = _config[variable];
+  let value = parseFloat(node.value) ?? undefined;
 
-  // Handle min, max
+  // Validate
+  if(typeof config.min === "number" && (value < config.min || isNaN(value))){
+    value = config.min;
+  }
 
-  _values[variable][row][col] = value;
+  if(typeof config.max === "number" && value > config.max){
+    node.value = config.max;
+    value = config.max;
+  }
+
+  _values[variable][row][col] = value || 0;
 
   recompute();
 }
@@ -278,7 +286,8 @@ function init(config){
       if(value.hasOwnProperty("matrix")){
         acc[key] = value.matrix;
       } else {
-        acc[key] = Array(value.rows || value.cols).fill().map(() => Array(value.cols || value.rows).fill(0));
+        const defaultValue = typeof _config[key].min === "number" ? _config[key].min : 0;
+        acc[key] = Array(value.rows || value.cols).fill().map(() => Array(value.cols || value.rows).fill(defaultValue));
       }
 
       return acc;
@@ -343,6 +352,8 @@ function init(config){
 
           if(isCustom){
             inputElement.value = _values[variable][i][j];
+          } else if(typeof _config[variable].min === "number") {
+            inputElement.value = _config[variable].min;
           }
 
           cellElement.appendChild(inputElement);
