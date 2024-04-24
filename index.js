@@ -246,6 +246,19 @@ function init(config){
       throw new Error(`Invalid type for '${key}'.`);
     }
 
+    // Matrix
+    if(isMatrix(value)){
+      const hasMatrix = value.hasOwnProperty("matrix");
+      const hasRows = value.hasOwnProperty("rows");
+      const hasCols = value.hasOwnProperty("cols");
+
+      if(hasMatrix && (hasRows || hasCols)){
+        const attributes = hasRows && hasCols ? "'rows' and 'cols'" : hasRows ? "'rows'" : "'cols'";
+        throw new Error(`Cannot define 'matrix' and ${attributes} together for '${key}'.`);
+      }
+    }
+
+    // Attributes
     Object.entries(value).forEach(([attribute, val]) => {
       if(!validTypes.hasOwnProperty(attribute)){
         throw new Error(`Invalid attribute '${attribute}' for '${key}'.`);

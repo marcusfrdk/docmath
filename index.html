@@ -23,14 +23,15 @@
       return {
         // C: math.multiply(math.matrix(A), a)
         // C: math.det(math.matrix(A))
-        C: math.multiply(math.matrix(A), a)
+        C: math.multiply(math.transpose(math.matrix(A)), a)
       };
     }
 
     init({
       a: {},
       A: {
-        rows: 2
+        rows: 2,
+        cols: 1,
         // matrix: [[1, 2, 3], [3, 4, 3]]
       }
     });
