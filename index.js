@@ -7,7 +7,13 @@ let _values;
 let _variables;
 let _answers;
 
+const MATRIX_ATTRIBUTES = ["rows", "cols", "matrix"];
 const DEFAULT_FRACTIONS = 3;
+
+// --- UTILS ---
+function isMatrix(value){
+  return typeof value === "object" && MATRIX_ATTRIBUTES.some(attribute => value.hasOwnProperty(attribute));
+}
 
 // --- COMPUTE ---
 function recompute(){
@@ -111,7 +117,7 @@ function onMatrix(event){
 
   // Handle min, max
 
-  _values[variable][col][row] = value;
+  _values[variable][row][col] = value;
 
   recompute();
 }
@@ -188,12 +194,10 @@ function init(config){
   
   const removeRhsRegex = /:\s*("[^"]*"|[^,}]*)/g;
   const removeParRegex = /\([^()]*\)/g;
-  // const removeCommentRegex = /\/\/[^\n]*/g;
   const removeCommentRegex = /\/\/[^\n]*|\/\*[^]*?\*\//g;
   
   let returnStatement = (returnMatch.length < 1 ? returnMatch.join("") : returnMatch[1]);
   returnStatement = returnStatement.replace(removeCommentRegex, "").replace(/\s|\/\//g, "");
-  console.log(returnStatement);
 
   while(returnStatement.includes("(") || returnStatement.includes(")")){
     returnStatement = returnStatement.replace(removeParRegex, "");
@@ -234,6 +238,7 @@ function init(config){
     "step": ["number", "undefined"],
     "rows": ["number", "undefined"],
     "cols": ["number", "undefined"],
+    "matrix": ["object", "undefined"],
   };
 
   Object.entries(config).forEach(([key, value]) => {
@@ -256,8 +261,13 @@ function init(config){
   // Set global variables
   _config = config;
   _values = Object.entries(config).reduce((acc, [key, value]) => {
-    if(value.hasOwnProperty("rows") && value.hasOwnProperty("cols")){
-      acc[key] = Array(value.rows || value.cols).fill().map(() => Array(value.cols || value.rows).fill(0));
+    if(isMatrix(value)){
+      if(value.hasOwnProperty("matrix")){
+        acc[key] = value.matrix;
+      } else {
+        acc[key] = Array(value.rows || value.cols).fill().map(() => Array(value.cols || value.rows).fill(0));
+      }
+
       return acc;
     }
 
@@ -267,6 +277,7 @@ function init(config){
 
   // DOM
   const inputAttributes = ["step", "min", "max", "value"];
+  const matrixAttributes = ["rows", "cols", "matrix"];
 
   const equationsElement = document.createElement("div");
   equationsElement.id = "equations";
@@ -289,13 +300,22 @@ function init(config){
     labelElement.textContent = `${variable} =`;
 
     // Matrix
-    if(_config[variable].hasOwnProperty("rows") && _config[variable].hasOwnProperty("cols")){
+    if(isMatrix(_config[variable])){
       const tableElement = document.createElement("table");
       tableElement.id = variable;
       tableElement.className = "matrix";
 
-      const rows = _config[variable].rows || _config[variable].cols;
-      const cols = _config[variable].cols || _config[variable].rows;
+      let rows, cols;
+      let isCustom = _config[variable].hasOwnProperty("matrix");
+
+      if(isCustom){
+        _values[variable] = _config[variable].matrix;
+        rows = _config[variable].matrix.length;
+        cols = _config[variable].matrix[0].length;
+      } else {
+        rows = _config[variable].rows || _config[variable].cols;
+        cols = _config[variable].cols || _config[variable].rows;
+      }
 
       for(let i = 0; i < rows; i++){
         const rowElement = document.createElement("tr");
@@ -307,7 +327,10 @@ function init(config){
           inputElement.id = `${variable}-${i}-${j}`;
           inputElement.name = `${variable}-${i}-${j}`;
           inputElement.type = "number";
-          // inputElement.value = 0;
+
+          if(isCustom){
+            inputElement.value = _values[variable][i][j];
+          }
 
           cellElement.appendChild(inputElement);
           rowElement.appendChild(cellElement);
@@ -351,7 +374,7 @@ function init(config){
   // Add event listeners
   Object.keys(_config).forEach(key => {
     // Matrix
-    if(_config[key].hasOwnProperty("rows") && _config[key].hasOwnProperty("cols")){
+    if(isMatrix(_config[key])){
       const tableElement = document.getElementById(key);
         
       for(let i = 0; i < tableElement.rows.length; i++){
@@ -374,7 +397,9 @@ function init(config){
 function onUnload(){
   Object.keys(_config).forEach(key => {
     // Matrix
-    if(_config[key].hasOwnProperty("rows") && _config[key].hasOwnProperty("cols")){
+    const isMatrix = ["rows", "cols", "matrix"].some(attribute => _config[variable].hasOwnProperty(attribute));
+
+    if(isMatrix){
       const tableElement = document.getElementById(key);
         
       for(let i = 0; i < tableElement.rows.length; i++){

@@ -22,15 +22,16 @@
 
       return {
         // C: math.multiply(math.matrix(A), a)
-        C: math.det(math.matrix(A))
+        // C: math.det(math.matrix(A))
+        C: math.multiply(math.matrix(A), a)
       };
     }
 
     init({
       a: {},
       A: {
-        rows: 3,
-        cols: 3
+        rows: 2
+        // matrix: [[1, 2, 3], [3, 4, 3]]
       }
     });
   </script>
