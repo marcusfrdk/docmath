@@ -4,9 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DocMath</title>
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.10.0-rc.1/dist/katex.js"></script>
   <link rel="stylesheet" href="./index.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-rc.1/dist/katex.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.10.0-rc.1/dist/katex.js"></script>
+  <script src="https://unpkg.com/mathjs@12.4.1/lib/browser/math.js"></script>
   <script src="./index.js"></script>
 </head>
 <body>
@@ -14,30 +15,24 @@
     fractions = 2;
 
     equations = [
-      "{{a}} + {{b}} = {{c}}",
-      "{{c}}^2 = {{d}}",
-      "\\frac{1}{{{d}}} = {{e}}"
+      "{{A}} * {{a}} = {{C}}"
     ];
 
-    function compute({a, b}){
-      const c = a + b;
-      const d = Math.pow(c, 2);
-      // const e = (1 / d).toExponential(fractions);
-      const e = 1 / d;
-      
+    function compute({A, a}){
+
       return {
-        c, d, e
+        // C: math.multiply(math.matrix(A), a)
+        C: math.det(math.matrix(A))
       };
     }
 
-    try {
-      init({
-        a: {},
-        b: {}
-      });
-    } catch(err) {
-      console.log(err);
-    }
+    init({
+      a: {},
+      A: {
+        rows: 3,
+        cols: 3
+      }
+    });
   </script>
 </body>
 </html>
